@@ -69,6 +69,7 @@
         .translate([width / 2, height / 2]);
 
 
+    //var projection = d3.geoConicConformalFrance();
     var path = d3.geoPath()
         .projection(projection);
 
@@ -87,7 +88,7 @@
             .attr("class", "counties")
             .selectAll("path")
             .data(topojson.feature(us, us.objects.wards).features)
-            .enter().append("path") 
+            .enter().append("path") //for each ward, append path
             .attr("fill", "#FAAAAF")
             .attr("d", path);
 
