@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html>
 <head>
     <title>Place Autocomplete and Directions</title>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
-    <link rel="stylesheet" href="/static/css/jquery.datetimepicker.min.css"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/jquery.datetimepicker.min.css') }}"/>
     <style>
         #loading {
               width: 100%;
@@ -25,10 +24,12 @@
               left: 240px;
               z-index: 100;
               }
-      
+        /* Always set the map height explicitly to define the size of the div
+         * element that contains the map. */
         #map {
             height: 100%;
         }
+        /* Optional: Makes the sample page fill the window. */
         html, body {
             height: 100%;
             margin: 0;
@@ -74,6 +75,7 @@
     </style>
 </head>
 <body>
+  <!-- add loading screen-->
   <div id="loading">
     <img id="loading-image" src="https://cdn-images-1.medium.com/max/800/1*9EBHIOzhE1XfMYoKz1JcsQ.gif" alt="Loading..." />
 
@@ -95,7 +97,10 @@
 <div id="map"></div>
 
 <script>
-   
+    // This example requires the Places library. Include the libraries=places
+    // parameter when you first load the API. For example:
+    // <script
+    // src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places">
     var map;
     var markers = [];
     function initMap() {
@@ -106,7 +111,9 @@
         });
         new AutocompleteDirectionsHandler(map);
     }
-    
+    /**
+     * @constructor
+     */
     function AutocompleteDirectionsHandler(map) {
         this.map = map;
         this.originPlaceId = null;
@@ -115,6 +122,7 @@
         this.directionsService = new google.maps.DirectionsService;
         this.directionsDisplay = new google.maps.DirectionsRenderer;
         this.directionsDisplay.setMap(map);
+        //datetime picker
        $(function () {
             var date = new Date();
             var currentMonth = date.getMonth();
@@ -125,10 +133,13 @@
         var originInput = document.getElementById('origin-input');
         var destinationInput = document.getElementById('destination-input');
         var datetimeInput = document.getElementById('datetime-input');
+        // var modeSelector = document.getElementById('mode-selector');
         var originAutocomplete = new google.maps.places.Autocomplete(originInput);
+        // Specify just the place data fields that you need.
         originAutocomplete.setFields(['place_id']);
         var destinationAutocomplete =
             new google.maps.places.Autocomplete(destinationInput);
+        // Specify just the place data fields that you need.
         destinationAutocomplete.setFields(['place_id']);
 
         this.setupPlaceChangedListener(originAutocomplete, 'ORIG');
@@ -137,6 +148,7 @@
         this.map.controls[google.maps.ControlPosition.TOP_LEFT].push(originInput);
         this.map.controls[google.maps.ControlPosition.TOP_LEFT].push(destinationInput);
         this.map.controls[google.maps.ControlPosition.TOP_LEFT].push(refresh);
+        // this.map.controls[google.maps.ControlPosition.TOP_LEFT].push(modeSelector);
     }
 
     AutocompleteDirectionsHandler.prototype.setupPlaceChangedListener = function(
@@ -162,14 +174,16 @@
             return;
         }
         var me = this;
+        // Sending and receiving data in JSON format using POST method
         var xhr = new XMLHttpRequest();
-        var url = "/prediction";
+        var url = "{{ url_for('main.prediction') }}";
         xhr.open("POST", url, true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
                 var json = JSON.parse(xhr.responseText);
                 console.log(json);
+                //if no accident, alert user, else display icons
                 if(json == null ) {window.alert('Hooray! No accidents predicted in your route. Click "Next Prediction" to reset map.');}
                 else {showAccidents2(json); }
             }
@@ -196,12 +210,12 @@
 
         var icon = {
           url:'https://cdn3.iconfinder.com/data/icons/map-markers-1/512/death-512.png',
-          scaledSize: new google.maps.Size(20, 32), // scaled size
+          scaledSize: new google.maps.Size(50, 50), // scaled size
         };
 
         var count = Object.keys(accident_json.accidents).length;
         console.log(count);
-        window.alert(count + ' accidents have been predicted. Move to the Danger marker to view probability. Click "Next Prediction" to reset map.');
+        window.alert(count + ' accidents predicted on your way. Check the pin point for the probability!');
         setMapOnAll(null);
         markers = [];
             for(var i = 0; i < count; i++)
@@ -214,22 +228,30 @@
                     });
                     markers.push(marker);
                 }
+        // marker.setMap(map);
         setMapOnAll(map);
     }
+    // Sets the map on all markers in the array.
     function setMapOnAll(map) {
         for (var i = 0; i < markers.length; i++) {
             markers[i].setMap(map);
         }
     }
+    //var markerArray = [];
     function showSteps(directionResult) {
-        
+        // For each step, place a marker, and add the text to the marker's
+        // info window. Also attach the marker to an array so we
+        // can keep track of it and remove it when calculating new
+        // routes.
         var myRoute = directionResult.routes[0].legs[0];
         for (var i = 0; i < myRoute.steps.length; i++) {
             var marker = new google.maps.Marker({
                 position: myRoute.steps[i].start_point,
                 map: map
             });
+            // console.log("Step:" + i + "," + myRoute.steps[i].start_point);
             attachInstructionText(marker, myRoute.steps[i].instructions);
+            //markerArray[i] = marker;
         }
     }
     function attachInstructionText(marker, text) {
@@ -238,12 +260,12 @@
             stepDisplay.open(map, marker);
         });
     }
-
+// https://stackoverflow.com/questions/1006654/fastest-way-to-find-distance-between-two-lat-long-points
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2OauQvIUxxEequvInYsXFB_D_NhsRvGw&libraries=places&callback=initMap"
         async defer></script>
-<script src="/static/js/jquery.js"></script>AIzaSyB2OauQvIUxxEequvInYsXFB_D_NhsRvGw
-<script src="/static/js/jquery.datetimepicker.full.js"></script>
+<script src="{{ url_for('static', filename='js/jquery.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jquery.datetimepicker.full.js') }}"></script>
 <script language="javascript" type="text/javascript">
      $(window).load(function() {
      $('#loading').hide();
